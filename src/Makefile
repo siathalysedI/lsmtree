@@ -11,6 +11,7 @@ CFLAGS =  -c -std=c99 -Wall $(DEBUG)
 LIB_OBJS = \
 	./index.o  \
 	./log.o	   \
+	./pool.o   \
 	./skiplist.o
 
 TEST_OBJS = \
