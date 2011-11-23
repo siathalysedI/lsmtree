@@ -9,15 +9,15 @@ CC = gcc
 CFLAGS =  -c -std=c99 -Wall $(DEBUG)	
 
 LIB_OBJS = \
-	./mtable.o \
 	./index.o  \
-	./log.o	
+	./log.o	   \
+	./skiplist.o
 
 TEST_OBJS = \
-	./test_mtable.o
+	./test_skiplist.o
 
 TESTS = \
-	./test_mtable
+	./test_skiplist 
 
 LIBRARY = liblsmtree.a
 
@@ -33,6 +33,5 @@ $(LIBRARY): $(LIB_OBJS)
 	rm -f $@
 	$(AR) -rs $@ $(LIB_OBJS)
 
-test_mtable: ./test_mtable.o $(TEST_OBJS) $(LIB_OBJS)
-	$(CC)  ./test_mtable.o $(SVR_OBJS) $(LIB_OBJS) -o $@
-
+test_skiplist: ./test_skiplist.o $(TEST_OBJS) $(LIB_OBJS)
+	$(CC)  ./test_skiplist.o $(SVR_OBJS) $(LIB_OBJS) -o $@
