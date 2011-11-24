@@ -26,71 +26,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "index.h"
 #include "debug.h"
 
-
-struct index *index_new(char *name,int max_mtbl,int max_mtbl_size)
+static void debug_raw(const char *msg)
 {
-	struct index *idx=malloc(sizeof(struct index));
-	
-	idx->lsn=0;
-	idx->max_mtbl=max_mtbl;
-	idx->max_mtbl_size=max_mtbl_size;
-	memset(idx->name,0,INDEX_NSIZE);
-	memcpy(idx->name,name,INDEX_NSIZE);
+    time_t now = time(NULL);
+    char buf[64];
 
-	/*mtable*/
-	idx->mtbls=calloc(idx->max_mtbl,sizeof(struct skiplist*));
-	idx->mtbls[0]=skiplist_new(idx->max_mtbl_size);
-
-	/*log*/
-	idx->log=log_new(name);
-
-	return idx;
+    strftime(buf,sizeof(buf),"%d %b %H:%M:%S",localtime(&now));
+    fprintf(stderr,"[%d] %s  %s\n",(int)getpid(),buf,msg);
 }
 
-
-int index_add(struct index *idx,char *k,int klen,void *v,int vlen)
+void __DEBUG(const char *fmt, ...) 
 {
-	int i;
-	struct skiplist *list;
+#ifdef DEBUG
+    va_list ap;
+    char msg[1024];
 
-	log_append(idx->log,k,klen,v,vlen);
-	list=idx->mtbls[idx->lsn];
-
-	if(!list){
-		__DEBUG("<%s:%d> list<%d> is NULL",__FILE__,__LINE__,idx->lsn);
-		return 0;
-	}
-
-	if(!skiplist_notfull(list)){
-		if(idx->lsn<idx->max_mtbl-1)
-			idx->lsn++;
-		else{
-			__DEBUG("<%s:%d> %s",__FILE__,__LINE__,"To do merge...");
-
-			for(i=0;i<idx->max_mtbl;i++){
-				/*TODO:merge*/
-				skiplist_free(idx->mtbls[i]);
-			}
-
-			idx->lsn=0;
-
-			log_free(idx->log);
-			idx->log=log_new(idx->name);
-		}
-
-		__DEBUG("<%s:%d> %s",__FILE__,__LINE__,"create new mtable");
-
-		list=skiplist_new(idx->max_mtbl_size);
-		idx->mtbls[idx->lsn]=list;
-	}
-	skiplist_insert(list,k,v,ADD);
-
-	return 1;
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+     
+    debug_raw(msg);
+#endif
 }

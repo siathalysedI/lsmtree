@@ -91,7 +91,7 @@ struct skiplist *skiplist_new(size_t size)
     for (i = 0; i <= MAXLEVEL; i++)
         list->hdr->forward[i] = NIL;
 
-    list->level = 0;
+	list->level = 0;
 	list->size=size;
 	list->count=0;
 	list->pool=(struct pool *) list->pool_embedded;
@@ -106,22 +106,33 @@ void skiplist_free(struct skiplist *list)
 	free(list);
 }
 
-int skiplist_insert(struct skiplist *list,char* data,size_t offset,OPT opt) {
+int skiplist_notfull(struct skiplist *list)
+{
+	if(list->count < list->size)
+		return 1;
+
+	return 0;
+}
+
+int skiplist_insert(struct skiplist *list,char* key,char *val,OPT opt) 
+{
     int i, new_level;
     struct skipnode *update[MAXLEVEL+1];
     struct skipnode *x;
+	if(!skiplist_notfull(list))
+		return 0;
 
     x = list->hdr;
     for (i = list->level; i >= 0; i--) {
         while (x->forward[i] != NIL 
-          && cmp_lt(x->forward[i]->key, data))
+          && cmp_lt(x->forward[i]->key, key))
             x = x->forward[i];
         update[i] = x;
     }
 
     x = x->forward[0];
-    if (x != NIL && cmp_eq(x->key, data)){
-		x->offset=offset;
+    if (x != NIL && cmp_eq(x->key, key)){
+		memcpy(x->val,val,SKIP_VSIZE);
 		x->opt=opt;
 		return(1);
 	}
@@ -136,11 +147,11 @@ int skiplist_insert(struct skiplist *list,char* data,size_t offset,OPT opt) {
     }
 
     if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0) {
-        printf ("insufficient memory (insert)\n");
+        printf ("memory *ERROR* (insert)\n");
         exit(1);
     }
-    memcpy(x->key,data,KEYSIZE);
-	x->offset=offset;
+    memcpy(x->key,key,SKIP_KSIZE);
+	memcpy(x->val,val,SKIP_VSIZE);
 	x->opt=opt;
 
     for (i = 0; i <= new_level; i++) {
@@ -152,7 +163,8 @@ int skiplist_insert(struct skiplist *list,char* data,size_t offset,OPT opt) {
     return(1);
 }
 
-void skiplist_delete(struct skiplist *list,char* data) {
+void skiplist_delete(struct skiplist *list,char* data) 
+{
     int i;
     struct skipnode *update[MAXLEVEL+1], *x;
 
@@ -179,7 +191,8 @@ void skiplist_delete(struct skiplist *list,char* data) {
         list->level--;
 }
 
-struct skipnode *skiplist_lookup(struct skiplist *list,char* data) {
+struct skipnode *skiplist_lookup(struct skiplist *list,char* data) 
+{
     int i;
     struct skipnode *x = list->hdr;
     for (i = list->level; i >= 0; i--) {
@@ -206,9 +219,10 @@ void skiplist_dump(struct skiplist *list)
 			(int)list->count);
 
 	for(i=0;i<list->count;i++){
-		printf("	[%d]key:<%s>;offset<%d>;opt<%s>\n",i,
+		printf("	[%d]key:<%s>;val<%s>;opt<%s>\n",
+				i,
 				x->key,
-				(int)x->offset,
+				x->val,
 				x->opt==ADD?"ADD":"DEL");
 		x=x->forward[0];
 	}
