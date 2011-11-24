@@ -34,7 +34,7 @@
 
 #include "debug.h"
 
-static void debug_raw(const char *msg)
+void debug_raw(const char *msg)
 {
     time_t now = time(NULL);
     char buf[64];
