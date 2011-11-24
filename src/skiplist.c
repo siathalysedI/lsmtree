@@ -29,13 +29,58 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "pool.h"
 #include "skiplist.h"
 
 #define cmp_lt(a,b) (strcmp(a,b)<0)
 #define cmp_eq(a,b) (strcmp(a,b)==0)
 
 #define NIL list->hdr
+
+struct pool {
+    struct pool *next;
+    char *ptr;
+    unsigned int rem;
+};
+
+static struct pool *pool_new (void)
+{
+    struct pool *pool;
+    pool = malloc (8192 - 8);
+
+    pool->next = NULL;
+    pool->rem = 8192 - 8 - sizeof (struct pool);
+    pool->ptr = (char *) (pool + 1);
+
+    return pool;
+}
+
+static void pool_destroy (struct pool *pool)
+{
+    while (pool->next != NULL) {
+		struct pool *next = pool->next;
+		free (pool);
+		pool = next;
+    }
+}
+
+static void *pool_alloc (struct skiplist *list,size_t size)
+{
+    struct pool *pool;
+    void *ptr;
+
+    pool = list->pool;
+    if (size > pool->rem) {
+		pool = pool_new ();
+		pool->next = list->pool;
+		list->pool = pool;
+    }
+
+    ptr = pool->ptr;
+    pool->ptr += size;
+    pool->rem -= size;
+
+    return ptr;
+}
 
 struct skiplist *skiplist_new(size_t size)
 {
@@ -56,7 +101,7 @@ struct skiplist *skiplist_new(size_t size)
 
 void skiplist_free(struct skiplist *list)
 {
-	pool_destory(list->pool);
+	pool_destroy(list->pool);
 	free(list->hdr);
 	free(list);
 }
@@ -90,7 +135,7 @@ int skiplist_insert(struct skiplist *list,char* data,size_t offset,OPT opt) {
         list->level = new_level;
     }
 
-    if ((x =pool_alloc(list->pool,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0) {
+    if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0) {
         printf ("insufficient memory (insert)\n");
         exit(1);
     }
