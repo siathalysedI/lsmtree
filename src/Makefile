@@ -2,7 +2,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
 	DEBUG = -g -rdynamic -ggdb -DDEBUG
 else
-	DEBUG =	-g -ggdb 
+	DEBUG =	-g -ggdb -DDEBUG
 endif
 
 CC = gcc
@@ -11,18 +11,19 @@ CFLAGS =  -c -std=c99 -Wall $(DEBUG)
 LIB_OBJS =     \
 	./index.o  \
 	./log.o	   \
-	./debug.o  \
-	./merge.o  \
 	./stable.o \
+	./buffer.o    \
 	./skiplist.o
 
 TEST_OBJS =\
 	./test_skiplist.o \
-	./test_index.o
+	./test_index.o    \
+	./test_buffer.o
 
 TESTS = \
 	./test_skiplist \
-	./test_index
+	./test_index    \
+	./test_buffer
 
 LIBRARY = liblsmtree.a
 
@@ -33,7 +34,15 @@ clean:
 	-rm -f $(LIB_OBJS)
 	-rm -f $(TEST_OBJS)
 	-rm -f $(TESTS)
+
+cleanall:
+	-rm -f $(LIBRARY)  
+	-rm -f $(LIB_OBJS)
+	-rm -f $(TEST_OBJS)
+	-rm -f $(TESTS)
+	
 	-rm -f *.log
+	-rm -f *.db
 
 $(LIBRARY): $(LIB_OBJS)
 	rm -f $@
@@ -44,3 +53,6 @@ test_skiplist: ./test_skiplist.o  $(TEST_OBJS) $(LIB_OBJS)
 
 test_index: ./test_index.o $(TEST_OBJS) $(LIB_OBJS)
 	$(CC) 	 ./test_index.o $(SVR_OBJS) $(LIB_OBJS) -o $@
+
+test_buffer: ./test_buffer.o $(TEST_OBJS) $(LIB_OBJS)
+	$(CC) 	 ./test_buffer.o $(SVR_OBJS) $(LIB_OBJS) -o $@

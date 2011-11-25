@@ -3,21 +3,25 @@
 #include <string.h>
 #include "skiplist.h"
 #include "debug.h"
+#include "util.h"
+#include "platform.h"
 
 #define MAXNUM (29)
 int main()
 {
 	int k;
 	char key[SKIP_KSIZE];
-	char val[SKIP_VSIZE];
+	struct slice sk;
 	struct skiplist *list=skiplist_new(MAXNUM-1);
 
 	for(k=0;k<MAXNUM;k++){
 		snprintf(key,SKIP_KSIZE,"key:%d",k);
-		snprintf(val,SKIP_VSIZE,"value:%d",k);
+		
+		sk.data=key;
+		sk.len=SKIP_KSIZE;
 
 		if(skiplist_notfull(list))
-			skiplist_insert(list,key,val,ADD);
+			skiplist_insert(list,&sk,k,ADD);
 		else
 			__DEBUG("%s","****you need more skiplist...");
 	}

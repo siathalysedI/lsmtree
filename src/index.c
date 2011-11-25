@@ -31,7 +31,11 @@
 #include <string.h>
 
 #include "index.h"
+#include "skiplist.h"
+#include "log.h"
 #include "debug.h"
+
+#include "platform.h"
 
 
 struct index *index_new(char *name,int max_mtbl,int max_mtbl_size)
@@ -55,24 +59,25 @@ struct index *index_new(char *name,int max_mtbl,int max_mtbl_size)
 }
 
 
-int index_add(struct index *idx,char *k,int klen,void *v,int vlen)
+int index_add(struct index *idx,struct slice *sk,struct slice *sv)
 {
 	int i;
+	UINT db_offset;
 	struct skiplist *list;
 
-	log_append(idx->log,k,klen,v,vlen);
-	list=idx->mtbls[idx->lsn];
+	db_offset = log_append(idx->log,sk,sv);
+	list = idx->mtbls[idx->lsn];
 
 	if(!list){
-		__DEBUG("<%s:%d> list<%d> is NULL",__FILE__,__LINE__,idx->lsn);
+		__DEBUG("list<%d> is NULL",idx->lsn);
 		return 0;
 	}
 
 	if(!skiplist_notfull(list)){
-		if(idx->lsn<idx->max_mtbl-1)
+		if(idx->lsn < idx->max_mtbl-1)
 			idx->lsn++;
 		else{
-			__DEBUG("<%s:%d> %s",__FILE__,__LINE__,"To do merge...");
+			__DEBUG("%s","To do merge...");
 
 			for(i=0;i<idx->max_mtbl;i++){
 				/*TODO:merge*/
@@ -85,12 +90,12 @@ int index_add(struct index *idx,char *k,int klen,void *v,int vlen)
 			idx->log=log_new(idx->name);
 		}
 
-		__DEBUG("<%s:%d> %s",__FILE__,__LINE__,"create new mtable");
+		__DEBUG("%s","create new mtable");
 
 		list=skiplist_new(idx->max_mtbl_size);
 		idx->mtbls[idx->lsn]=list;
 	}
-	skiplist_insert(list,k,v,ADD);
+	skiplist_insert(list,sk,db_offset,ADD);
 
 	return 1;
 }

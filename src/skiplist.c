@@ -31,6 +31,8 @@
 #include <string.h>
 #include "skiplist.h"
 
+#include "debug.h"
+
 #define cmp_lt(a,b) (strcmp(a,b)<0)
 #define cmp_eq(a,b) (strcmp(a,b)==0)
 
@@ -114,11 +116,14 @@ int skiplist_notfull(struct skiplist *list)
 	return 0;
 }
 
-int skiplist_insert(struct skiplist *list,char* key,char *val,OPT opt) 
+int skiplist_insert(struct skiplist *list,struct slice *sk,UINT val,OPT opt) 
 {
     int i, new_level;
     struct skipnode *update[MAXLEVEL+1];
     struct skipnode *x;
+
+	char *key=sk->data;
+
 	if(!skiplist_notfull(list))
 		return 0;
 
@@ -132,8 +137,8 @@ int skiplist_insert(struct skiplist *list,char* key,char *val,OPT opt)
 
     x = x->forward[0];
     if (x != NIL && cmp_eq(x->key, key)){
-		memcpy(x->val,val,SKIP_VSIZE);
-		x->opt=opt;
+		x->val = val;
+		x->opt = opt;
 		return(1);
 	}
 
@@ -146,12 +151,11 @@ int skiplist_insert(struct skiplist *list,char* key,char *val,OPT opt)
         list->level = new_level;
     }
 
-    if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0) {
-        printf ("memory *ERROR* (insert)\n");
-        exit(1);
-    }
-    memcpy(x->key,key,SKIP_KSIZE);
-	memcpy(x->val,val,SKIP_VSIZE);
+    if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0)
+		__DEBUG("%s","memory *ERROR*");
+    
+	memcpy(x->key,key,sk->len);
+	x->val=val;
 	x->opt=opt;
 
     for (i = 0; i <= new_level; i++) {
@@ -219,7 +223,7 @@ void skiplist_dump(struct skiplist *list)
 			(int)list->count);
 
 	for(i=0;i<list->count;i++){
-		printf("	[%d]key:<%s>;val<%s>;opt<%s>\n",
+		printf("	[%d]key:<%s>;val<%llu>;opt<%s>\n",
 				i,
 				x->key,
 				x->val,

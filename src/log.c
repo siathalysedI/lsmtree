@@ -46,36 +46,94 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "buffer.h"
 #include "log.h"
-#include "platform.h"
+#include "debug.h"
+#include "util.h"
 
 #define LOG_NSIZE (256)
+
+int _file_exists(const char *path)
+{
+	int fd = open(path, O_RDWR);
+	if(fd>-1){
+		close(fd);
+		return 1;
+	}
+	return 0;
+}
+
+UINT _getsize(int fd) {
+    struct stat sb;
+    if (fstat(fd,&sb) == -1)
+		return 0;
+
+    return (UINT)sb.st_size;
+}
 
 struct log *log_new(char *name)
 {
 	struct log *l;
 	char log_name[LOG_NSIZE];
+	char db_name[LOG_NSIZE];
+
+	l=malloc(sizeof(struct log));
 
 	memset(log_name,0,LOG_NSIZE);
 	snprintf(log_name,LOG_NSIZE,"%s.log",name);
-	l=malloc(sizeof(struct log));
-	l->fd=open(log_name, LSM_CREAT_FLAGS, 0644);
 
-	if (l->fd < 0)
-		return NULL;
+	memset(db_name,0,LOG_NSIZE);
+	snprintf(db_name,LOG_NSIZE,"%s.db",name);
 
-	l->size=0;
+	if(_file_exists(log_name)){
+		l->fd=open(log_name, LSM_CREAT_FLAGS, 0644);
+		__DEBUG("%s","Find log file,need to recover");
+		/*TODO: log recover*/
+	}else
+		l->fd=open(log_name, LSM_CREAT_FLAGS, 0644);
+
+	if(_file_exists(db_name)){
+		l->fd_db = open(db_name,LSM_OPEN_FLAGS,0644);
+		l->db_alloc = _getsize(l->fd_db);
+		lseek(l->fd,l->db_alloc,SEEK_SET);
+	}else{
+		l->fd_db=open(db_name,LSM_CREAT_FLAGS,0644);
+		l->db_alloc=0;
+	}
+
+	l->buffer=buffer_new(1024);
+
 
 	return l;
 }
 
-void log_append(struct log *l,char *k,int klen,char *val,int vlen)
+UINT log_append(struct log *l,struct slice *sk,struct slice *sv)
 {
-	write(l->fd,&klen,sizeof(int));
-	write(l->fd,k,klen);
+	char *line;
+	struct buffer *buf = l->buffer;
+	int len;
+	UINT db_offset = l->db_alloc;
 
-	write(l->fd,&vlen,sizeof(int));
-	write(l->fd,val,vlen);
+	if(write(l->fd_db,sv->data,sv->len) != sv->len){
+		__DEBUG("%s","data aof **ERROR**");
+		return db_offset;
+	}
+
+	l->db_alloc += sv->len;
+
+	buffer_putint(buf,sk->len);
+	buffer_putnstr(buf,sk->data,sk->len);
+	buffer_putint(buf,db_offset);
+
+	len=buf->NUL;
+	line=buffer_detach(buf);
+
+	if(write(l->fd,line,len) != len)
+		__DEBUG("%s,line is:%s","log aof **ERROR**",line);
+
+	buffer_clear(buf);
+
+	return db_offset;
 }
 
 void log_free(struct log *l)
