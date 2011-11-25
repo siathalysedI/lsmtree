@@ -1,5 +1,17 @@
-Yep,this is  Log-Structured Merge-Tree (LSM-Tree)
-It is under construction!
+Yep,this is a Log-Structured Merge-Tree (LSM-Tree),is written in ANSI-C,without external dependencies.
+It is a  simply  LSM-Tree implementation,and is intended as nessDB storage engine,now is still under construction.
 
---BohuTANG <overred.shuttler at gmail dot com>
+LAYOUT
+=======
+ mtable : memory table(a key sorted skiplist,very fast,200000 ops/second)
+ sstable : On-Disk index(key sorted),include : block index,blocks
+ log : insert/update/delete log file,as for data recover.
+
+HOW TODO
+==========
+ $make test_index 		//indices build test
+ $make test_buffer		//buffer test
+ $make test_skiplist	//skiplist test  
+
+  All By BohuTANG <overred.shuttler at gmail dot com>
   2011
