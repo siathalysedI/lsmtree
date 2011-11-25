@@ -115,11 +115,10 @@ void buffer_putint(struct buffer *b,int i)
 {
 	unsigned int value=i;
 	_buffer_extendby(b,sizeof(int));
-
 	b->buf[b->NUL++] = (char)(value);
-    b->buf[b->NUL++] = (char)(value >> 0x08);
-    b->buf[b->NUL++] = (char)(value >> 0x10);
-    b->buf[b->NUL++] = (char)(value >> 0x18);
+	b->buf[b->NUL++] = (char)(value >> 0x08);
+	b->buf[b->NUL++] = (char)(value >> 0x10);
+	b->buf[b->NUL++] = (char)(value >> 0x18);
 }
 
 char * buffer_detach(struct buffer *b)

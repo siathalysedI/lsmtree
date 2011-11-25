@@ -65,28 +65,27 @@ static void pool_destroy (struct pool *pool)
 
 static void *pool_alloc (struct skiplist *list,size_t size)
 {
-    struct pool *pool = pool_new (size);
+	struct pool *pool = pool_new (size);
 	pool->next = list->pool;
 	list->pool = pool;
-
-    return pool->ptr;
+	return pool->ptr;
 }
 
 struct skiplist *skiplist_new(size_t size)
 {
-    int i;
-    struct skiplist *list=malloc(sizeof(struct skiplist));
-    list->hdr = malloc(sizeof(struct skipnode) + MAXLEVEL*sizeof(struct skipnode *));
+	int i;
+	struct skiplist *list=malloc(sizeof(struct skiplist));
+	list->hdr = malloc(sizeof(struct skipnode) + MAXLEVEL*sizeof(struct skipnode *));
 
-    for (i = 0; i <= MAXLEVEL; i++)
-        list->hdr->forward[i] = NIL;
+	for (i = 0; i <= MAXLEVEL; i++)
+		list->hdr->forward[i] = NIL;
 
 	list->level = 0;
 	list->size=size;
 	list->count=0;
 	list->pool=(struct pool *) list->pool_embedded;
 	list->pool->next=NULL;
-    return list;
+	return list;
 }
 
 void skiplist_free(struct skiplist *list)
@@ -106,97 +105,97 @@ int skiplist_notfull(struct skiplist *list)
 
 int skiplist_insert(struct skiplist *list,struct slice *sk,UINT val,OPT opt) 
 {
-    int i, new_level;
-    struct skipnode *update[MAXLEVEL+1];
-    struct skipnode *x;
+	int i, new_level;
+	struct skipnode *update[MAXLEVEL+1];
+	struct skipnode *x;
 
 	char *key=sk->data;
 
 	if(!skiplist_notfull(list))
 		return 0;
 
-    x = list->hdr;
-    for (i = list->level; i >= 0; i--) {
-        while (x->forward[i] != NIL 
-          && cmp_lt(x->forward[i]->key, key))
-            x = x->forward[i];
-        update[i] = x;
-    }
+	x = list->hdr;
+	for (i = list->level; i >= 0; i--) {
+		while (x->forward[i] != NIL 
+				&& cmp_lt(x->forward[i]->key, key))
+			x = x->forward[i];
+		update[i] = x;
+	}
 
-    x = x->forward[0];
-    if (x != NIL && cmp_eq(x->key, key)){
+	x = x->forward[0];
+	if (x != NIL && cmp_eq(x->key, key)){
 		x->val = val;
 		x->opt = opt;
 		return(1);
 	}
 
-    for (new_level = 0; rand() < RAND_MAX/2 && new_level < MAXLEVEL; new_level++);
+	for (new_level = 0; rand() < RAND_MAX/2 && new_level < MAXLEVEL; new_level++);
 
-    if (new_level > list->level) {
-        for (i = list->level + 1; i <= new_level; i++)
+	if (new_level > list->level) {
+		for (i = list->level + 1; i <= new_level; i++)
 			update[i] = NIL;
 
-        list->level = new_level;
-    }
+		list->level = new_level;
+	}
 
-    if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0)
+	if ((x =pool_alloc(list,sizeof(struct skipnode) + new_level*sizeof(struct skipnode *))) == 0)
 		__DEBUG("%s","memory *ERROR*");
-    
+
 	memcpy(x->key,key,sk->len);
 	x->val=val;
 	x->opt=opt;
 
-    for (i = 0; i <= new_level; i++) {
-        x->forward[i] = update[i]->forward[i];
-        update[i]->forward[i] = x;
-    }
-    list->count++;
+	for (i = 0; i <= new_level; i++) {
+		x->forward[i] = update[i]->forward[i];
+		update[i]->forward[i] = x;
+	}
+	list->count++;
 
-    return(1);
+	return(1);
 }
 
 void skiplist_delete(struct skiplist *list,char* data) 
 {
-    int i;
-    struct skipnode *update[MAXLEVEL+1], *x;
+	int i;
+	struct skipnode *update[MAXLEVEL+1], *x;
 
-    x = list->hdr;
-    for (i = list->level; i >= 0; i--) {
-        while (x->forward[i] != NIL 
-          && cmp_lt(x->forward[i]->key, data))
-            x = x->forward[i];
-        update[i] = x;
-    }
-    x = x->forward[0];
-    if (x == NIL || !cmp_eq(x->key, data))
+	x = list->hdr;
+	for (i = list->level; i >= 0; i--) {
+		while (x->forward[i] != NIL 
+				&& cmp_lt(x->forward[i]->key, data))
+			x = x->forward[i];
+		update[i] = x;
+	}
+	x = x->forward[0];
+	if (x == NIL || !cmp_eq(x->key, data))
 		return;
 
-    for (i = 0; i <= list->level; i++) {
-        if (update[i]->forward[i] != x)
+	for (i = 0; i <= list->level; i++) {
+		if (update[i]->forward[i] != x)
 			break;
-        update[i]->forward[i] = x->forward[i];
-    }
-    free (x);
+		update[i]->forward[i] = x->forward[i];
+	}
+	free (x);
 
-    while ((list->level > 0)
-    && (list->hdr->forward[list->level] == NIL))
-        list->level--;
+	while ((list->level > 0)
+			&& (list->hdr->forward[list->level] == NIL))
+		list->level--;
 }
 
 struct skipnode *skiplist_lookup(struct skiplist *list,char* data) 
 {
-    int i;
-    struct skipnode *x = list->hdr;
-    for (i = list->level; i >= 0; i--) {
-        while (x->forward[i] != NIL 
-          && cmp_lt(x->forward[i]->key, data))
-            x = x->forward[i];
-    }
-    x = x->forward[0];
-    if (x != NIL && cmp_eq(x->key, data)) 
+	int i;
+	struct skipnode *x = list->hdr;
+	for (i = list->level; i >= 0; i--) {
+		while (x->forward[i] != NIL 
+				&& cmp_lt(x->forward[i]->key, data))
+			x = x->forward[i];
+	}
+	x = x->forward[0];
+	if (x != NIL && cmp_eq(x->key, data)) 
 		return (x);
 
-    return NULL;
+	return NULL;
 }
 
 
