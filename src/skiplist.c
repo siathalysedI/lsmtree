@@ -44,14 +44,11 @@ struct pool {
     unsigned int rem;
 };
 
-static struct pool *pool_new (void)
+static struct pool *pool_new (size_t size)
 {
-    struct pool *pool;
-    pool = malloc (8192 - 8);
-
+    struct pool *pool = malloc(sizeof(struct pool));
     pool->next = NULL;
-    pool->rem = 8192 - 8 - sizeof (struct pool);
-    pool->ptr = (char *) (pool + 1);
+    pool->ptr = malloc(size);
 
     return pool;
 }
@@ -60,6 +57,7 @@ static void pool_destroy (struct pool *pool)
 {
     while (pool->next != NULL) {
 		struct pool *next = pool->next;
+		free(pool->ptr);
 		free (pool);
 		pool = next;
     }
@@ -67,21 +65,11 @@ static void pool_destroy (struct pool *pool)
 
 static void *pool_alloc (struct skiplist *list,size_t size)
 {
-    struct pool *pool;
-    void *ptr;
+    struct pool *pool = pool_new (size);
+	pool->next = list->pool;
+	list->pool = pool;
 
-    pool = list->pool;
-    if (size > pool->rem) {
-		pool = pool_new ();
-		pool->next = list->pool;
-		list->pool = pool;
-    }
-
-    ptr = pool->ptr;
-    pool->ptr += size;
-    pool->rem -= size;
-
-    return ptr;
+    return pool->ptr;
 }
 
 struct skiplist *skiplist_new(size_t size)

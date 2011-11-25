@@ -49,9 +49,7 @@
 #include "buffer.h"
 #include "log.h"
 #include "debug.h"
-#include "util.h"
 
-#define LOG_NSIZE (256)
 
 int _file_exists(const char *path)
 {
@@ -81,12 +79,13 @@ struct log *log_new(char *name)
 
 	memset(log_name,0,LOG_NSIZE);
 	snprintf(log_name,LOG_NSIZE,"%s.log",name);
+	memcpy(l->name,log_name,LOG_NSIZE);
 
 	memset(db_name,0,LOG_NSIZE);
 	snprintf(db_name,LOG_NSIZE,"%s.db",name);
 
 	if(_file_exists(log_name)){
-		l->fd=open(log_name, LSM_CREAT_FLAGS, 0644);
+		l->fd=open(log_name, LSM_OPEN_FLAGS, 0644);
 		__DEBUG("%s","Find log file,need to recover");
 		/*TODO: log recover*/
 	}else
@@ -101,7 +100,7 @@ struct log *log_new(char *name)
 		l->db_alloc=0;
 	}
 
-	l->buffer=buffer_new(1024);
+	l->buf = buffer_new(256);
 
 
 	return l;
@@ -110,7 +109,7 @@ struct log *log_new(char *name)
 UINT log_append(struct log *l,struct slice *sk,struct slice *sv)
 {
 	char *line;
-	struct buffer *buf = l->buffer;
+	struct buffer *buf = l->buf;
 	int len;
 	UINT db_offset = l->db_alloc;
 
@@ -131,7 +130,6 @@ UINT log_append(struct log *l,struct slice *sk,struct slice *sv)
 	if(write(l->fd,line,len) != len)
 		__DEBUG("%s,line is:%s","log aof **ERROR**",line);
 
-	buffer_clear(buf);
 
 	return db_offset;
 }
@@ -139,6 +137,8 @@ UINT log_append(struct log *l,struct slice *sk,struct slice *sv)
 void log_free(struct log *l)
 {
 	if(l){
+		buffer_free(l->buf);
+		remove(l->name);
 		close(l->fd);
 		free(l);
 	}

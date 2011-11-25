@@ -2,15 +2,16 @@
 #define _LOG_H
 
 #include "util.h"
-#include "buffer.h"
 #include "platform.h"
+
+#define LOG_NSIZE (256)
 
 struct log{
 	int fd;
 	int fd_db;
-	size_t size;
+	char name[LOG_NSIZE];
 	UINT db_alloc;
-	struct buffer *buffer;
+	struct buffer *buf;
 };
 
 struct log *log_new(char *name);

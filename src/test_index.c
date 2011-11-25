@@ -7,9 +7,9 @@
 #define KSIZE (16)
 #define VSIZE (20)
 
-#define LOOP (100)
-#define MAX_MTBL (10)
-#define MAX_MTBL_SIZE (10)
+#define LOOP (5000000)
+#define MAX_MTBL (7)
+#define MAX_MTBL_SIZE (300000)
 
 int main()
 {
@@ -30,9 +30,7 @@ int main()
 		sv.data=val;
 
 		ret=index_add(idx,&sk,&sv);
-		if(ret)
-		 	__DEBUG("Write...key:<%s>,value:<%s>",key,val);
-		else
+		if(!ret)
 			__DEBUG("%s","Write failed....");
 	}
 

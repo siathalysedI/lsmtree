@@ -76,6 +76,7 @@ void buffer_free(struct buffer *b)
 {
 	if (b->buf)
 		free(b->buf);
+	free(b);
 }
 
 void buffer_clear(struct buffer *b)
@@ -124,7 +125,6 @@ void buffer_putint(struct buffer *b,int i)
 char * buffer_detach(struct buffer *b)
 {
 	char *buffer = b->buf;
-	b->buf = NULL;
 	b->NUL = 0;
 	b->buflen = 0;
 	return buffer;

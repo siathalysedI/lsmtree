@@ -84,6 +84,8 @@ int index_add(struct index *idx,struct slice *sk,struct slice *sv)
 				skiplist_free(idx->mtbls[i]);
 			}
 
+			__DEBUG("%s","Finished free all mtables");
+
 			idx->lsn=0;
 
 			log_free(idx->log);
