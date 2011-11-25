@@ -1,5 +1,7 @@
-Yep,this is a Log-Structured Merge-Tree (LSM-Tree),is written in ANSI-C,without external dependencies.
-It is a  simply  LSM-Tree implementation,and is intended as nessDB storage engine,now is still under construction.
+Yep,this is a Log-Structured Merge-Tree (LSM-Tree).
+It is written in ANSI-C,without external dependencies.
+It is a simply LSM-Tree implementation,and is intended as nessDB storage engine.
+Now is still under construction.
 
 LAYOUT
 =======
@@ -9,7 +11,7 @@ LAYOUT
 
 HOW TODO
 ==========
- $make test_index 		//indices build test
+ $make test_index		//indices build test
  $make test_buffer		//buffer test
  $make test_skiplist	//skiplist test  
 
