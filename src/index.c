@@ -46,7 +46,7 @@ struct index *index_new(char *name,int max_mtbl,int max_mtbl_size)
 	idx->max_mtbl=max_mtbl;
 	idx->max_mtbl_size=max_mtbl_size;
 	memset(idx->name,0,INDEX_NSIZE);
-	memcpy(idx->name,name,INDEX_NSIZE);
+	memcpy(idx->name,name,strlen(name)+1);
 
 	/*mtable*/
 	idx->mtbls=calloc(idx->max_mtbl,sizeof(struct skiplist*));
